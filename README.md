@@ -1,0 +1,1 @@
+node --es-module-specifier-resolution=node --loader ts-node/esm --no-warnings 1363.ts
