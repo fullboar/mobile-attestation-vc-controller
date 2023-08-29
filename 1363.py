@@ -68,24 +68,17 @@ def verify_apple_attestation_object(attestation_object, apple_app_attestation_ro
         ]:
             return False
 
-        credential_certificate_is_valid = root_certificate.public_key().verify(
+        intermediate_certificate_is_valid = root_certificate.public_key().verify(
+            intermediate_certificate.signature,
+            intermediate_certificate.tbs_certificate_bytes,
+            ec.ECDSA(intermediate_certificate.signature_hash_algorithm)
+        )
+
+        credential_certificate_is_valid = intermediate_certificate.public_key().verify(
             credential_certificate.signature,
             credential_certificate.tbs_certificate_bytes,
             ec.ECDSA(credential_certificate.signature_hash_algorithm),
         )
-
-        # credential_certificate_is_valid = root_certificate.public_key().verify(
-        #     credential_certificate.signature,
-        #     credential_certificate.tbs_certificate_bytes,
-        #     ec.ECDSA(credential_certificate.signature_hash_algorithm)
-        # )
-
-        intermediate_certificate_is_valid = None
-        # intermediate_certificate_is_valid = root_certificate.public_key().verify(
-        #     intermediate_certificate.signature,
-        #     intermediate_certificate.tbs_certificate_bytes,
-        #     ec.ECDSA(intermediate_certificate.signature_hash_algorithm)
-        # )
 
         if intermediate_certificate_is_valid is None and credential_certificate_is_valid is None:
             print('The certificates are signed by the ROOT certificate.')
