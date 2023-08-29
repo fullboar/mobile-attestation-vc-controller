@@ -12,6 +12,7 @@ import cbor
 import base64
 import hashlib
 
+from cryptography.exceptions import InvalidSignature
 
 AppleAppAttestStatement = Dict[str, Union[str, Dict[str, List[bytes]], bytes]]
 
@@ -60,11 +61,24 @@ def verify_apple_attestation_object(attestation_object, apple_app_attestation_ro
 
         # Verify the signature of the certificate using the public key of the root certificate
 
+        assert isinstance(root_certificate.public_key(), ec.EllipticCurvePublicKey)
+
+        if credential_certificate.signature_algorithm_oid not in [
+            x509.SignatureAlgorithmOID.ECDSA_WITH_SHA256
+        ]:
+            return False
+
         credential_certificate_is_valid = root_certificate.public_key().verify(
             credential_certificate.signature,
             credential_certificate.tbs_certificate_bytes,
-            ec.ECDSA(credential_certificate.signature_hash_algorithm)
+            ec.ECDSA(credential_certificate.signature_hash_algorithm),
         )
+
+        # credential_certificate_is_valid = root_certificate.public_key().verify(
+        #     credential_certificate.signature,
+        #     credential_certificate.tbs_certificate_bytes,
+        #     ec.ECDSA(credential_certificate.signature_hash_algorithm)
+        # )
 
         intermediate_certificate_is_valid = None
         # intermediate_certificate_is_valid = root_certificate.public_key().verify(
@@ -76,7 +90,7 @@ def verify_apple_attestation_object(attestation_object, apple_app_attestation_ro
         if intermediate_certificate_is_valid is None and credential_certificate_is_valid is None:
             print('The certificates are signed by the ROOT certificate.')
 
-    except Exception as e:
+    except InvalidSignature as e:
         print("The certificates are NOT signed by the ROOT certificate.")
         print(e)
 
