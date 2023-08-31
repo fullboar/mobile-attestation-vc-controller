@@ -1,14 +1,16 @@
 {
   "$schema": "https://aka.ms/vscode-remote/devcontainer-schema",
-  "name": "Python",
+  "name": "Python3",
   "image": "mcr.microsoft.com/vscode/devcontainers/python:3.11",
+  "forwardPorts": [
+    5000
+  ],
   // Mount the local workspace folder into the container
   "workspaceMount": "source=${localWorkspaceFolder},target=/work,type=bind",
   "workspaceFolder": "/work",
   // Install Python and pipenv using pyenv
   // "postCreateCommand": "pip install pipenv && pyenv install 3.11.4 && pyenv global 3.11.4",
   "postCreateCommand": "pip --disable-pip-version-check --no-cache-dir install -r requirements.txt",
-  // Use pipenv to install dependencies
   "runArgs": [
     "--env-file",
     ".devcontainer/devcontainer.env"
@@ -18,7 +20,9 @@
       "extensions": [
         "ms-python.python",
         "github.copilot",
-        "github.copilot-chat"
+        "github.copilot-chat",
+        "ms-python.flake8",
+        "ms-python.black-formatter"
       ],
       "settings": {
         "github.copilot.chat.enabled": true,

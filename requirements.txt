@@ -1,3 +1,7 @@
 cbor
 cryptography
 pyasn1
+flask
+jsonify
+python-dotenv
+requests

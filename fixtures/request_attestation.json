@@ -1,0 +1,7 @@
+{
+  "type": "attestation",
+  "platform": "apple",
+  "version": 1,
+  "action": "request_attestation",
+  "nonce": "0x8fe2c60a0fdc6edb64d96edbd6996e3da1db3e45f5e9f8c3e4a44e0c2ecbc2a8"
+}

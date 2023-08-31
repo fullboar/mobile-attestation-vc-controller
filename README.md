@@ -1,3 +1,9 @@
+
+jq --arg content "$(cat fixtures/request_issuance.json | base64)" --arg name "jason" '.content |= $content | .name |= $name' fixtures/basic_message.json
+
+
+## Apple Verifications Steps
+
 - [x] Use the decoded object, along with the key identifier that your app sends, to perform the following steps:
 
 - [x] Verify that the x5c array contains the intermediate and leaf certificates for App Attest, starting from the credential certificate in the first data buffer in the array (credcert). Verify the validity of the certificates using Apple’s App Attest root certificate.

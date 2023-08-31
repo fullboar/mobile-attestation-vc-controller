@@ -1,0 +1,6 @@
+{
+  "type": "attestation",
+  "platform": "apple",
+  "version": 1,
+  "action": "request_issuance"
+}

@@ -6,3 +6,5 @@ yarn-error.log
 coverage
 .DS_Store
 logs.txt
+attestation.json
+.env
