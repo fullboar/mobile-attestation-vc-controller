@@ -2,8 +2,8 @@
   "type": "attestation",
   "platform": "apple",
   "version": 1,
-  "action": "register",
-  "key_identifier": "eyAiQHR5...=",
+  "action": "chalange_response",
+  "key_id": "eyAiQHR5...=",
   "client_data_hash": "eyAiQHR5...=",
   "attestation_object": "eyAiQHR5...="
 }

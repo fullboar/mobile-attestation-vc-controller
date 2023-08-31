@@ -1,7 +1,8 @@
 from flask import Flask, request, make_response, jsonify
 import base64
 import json
-from traction import send_message
+from traction import send_message, offer_attestation_credential
+from apple import verify_attestation_statement
 
 app = Flask(__name__)
 
@@ -9,7 +10,7 @@ def handle_message(message, content):
     action = content.get('action')
     handler = {
         'request_issuance': handle_request_issuance_action,
-        'attestation_chalange': handle_attestation_chalange,
+        'chalange_response': handle_chalange_response,
     }.get(action, handle_default)
 
     return handler(message['connection_id'], content)
@@ -26,8 +27,21 @@ def handle_request_issuance_action(connection_id, content):
 
     send_message(connection_id, base64_str)
 
-def handle_attestation_chalange(connection_id, content):
+def handle_chalange_response(connection_id, content):
     print("handle_attestation_chalange")
+
+    platform = content.get('platform')
+
+    if platform == 'apple':
+        is_valid_chalange = verify_attestation_statement(content)
+        if is_valid_chalange:
+            print("chalange is valid")
+            offer_attestation_credential(connection_id)
+        else:
+            print("chalange is invalid")
+    else:
+        print("unsupported platform")
+
 
 def handle_default(connection_id, content):
     # Handle default case

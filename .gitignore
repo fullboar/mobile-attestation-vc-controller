@@ -8,3 +8,4 @@ coverage
 logs.txt
 attestation.json
 .env
+__pycache__/*

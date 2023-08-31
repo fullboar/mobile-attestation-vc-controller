@@ -129,10 +129,12 @@ def create_hash_from_pub_key(cred_certificate):
     # Print the hash as a hexadecimal string
     return hash_hex
 
+def verify_attestation_statement(attestation_object):
+    return True
 
 def main():
     load_dotenv()
-    
+
     server_side_nonce = '1234567890'
 
     with open("attestation.json", "r") as f:

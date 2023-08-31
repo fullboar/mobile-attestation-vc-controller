@@ -1,0 +1,20 @@
+{
+    "auto_issue": true,
+    "auto_remove": true,
+    "trace": true,
+    "cred_def_id": "NxWbeuw8Y2ZBiTrGpcK7Tn:3:CL:48312:default",
+    "credential_preview": {
+        "@type": "issue-credential/1.0/credential-preview",
+        "attributes": [
+            {
+                "name": "Assurance Level",
+                "value": "3"
+            },
+            {
+                "name": "Issued At",
+                "value": "2023-05-14T14:48:00.000Z"
+            }
+        ]
+    },
+    "comment": "This is a comment"
+}

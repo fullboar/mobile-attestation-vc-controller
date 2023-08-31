@@ -1,6 +1,18 @@
 
+```bash
 jq --arg content "$(cat fixtures/request_issuance.json | base64)" --arg name "jason" '.content |= $content | .name |= $name' fixtures/basic_message.json
+```
+```bash
+jq --arg content "$(cat fixtures/request_issuance.json | base64)" '.content |= $content' fixtures/basic_message.json|curl -v -X POST -H "Content-Type: application/json" -d @- http://localhost:5000/topic/basicmessages/
+```
 
+```bash
+jq -s '.[0] * .[1]' source.json target.json
+```
+
+```bash
+jq --arg content "$(jq -s '.[0] * .[1]' fixtures/chalange_response.json attestation.json | base64)" '.content |= $content' fixtures/basic_message.json| curl -v -X POST -H "Content-Type: application/json" -d @- http://localhost:5000/topic/basicmessages/
+```
 
 ## Apple Verifications Steps
 
