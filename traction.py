@@ -2,13 +2,75 @@ import requests
 import json
 import os
 from urllib.parse import urljoin
+from dotenv import load_dotenv
+
+load_dotenv()
+
+bearer_token = None
+
+def fetch_bearer_token():
+    global bearer_token
+
+    if bearer_token:
+        return bearer_token
+
+    base_url = os.environ.get("TRACTION_BASE_URL")
+    wallet_id = os.environ.get("TRACTION_WALLET_ID")
+    wallet_key = os.environ.get("TRACTION_WALLET_KEY")
+    endpoint = f"multitenancy/wallet/{wallet_id}/token"
+    url = urljoin(base_url, endpoint)
+    headers = {"Content-Type": "application/json", "accept": "application/json"}
+    data = {"wallet_key": wallet_key}
+
+    print(f"Requesting bearer token for walletId {wallet_id}")
+
+    response = requests.post(url, headers=headers, data=json.dumps(data))
+    if response.status_code == 200:
+        print("Token fetched successfully")
+        response_data = json.loads(response.text)
+
+        bearer_token = response_data['token']
+        return bearer_token
+    else:
+        print(f"Error fetcing token: {response.status_code}")
+
+def get_connection(conn_id):
+    base_url = os.environ.get("TRACTION_BASE_URL")
+    endpoint = f"/connections/{conn_id}"
+    url = urljoin(base_url, endpoint)
+
+    token = fetch_bearer_token()
+
+    headers = {
+        "Content-Type": "application/json",
+        "accept": "application/json",
+        "Authorization": f"Bearer {token}"
+    }
+
+    print(f"Fetching connection {conn_id}")
+
+    response = requests.get(url, headers=headers)
+
+    if response.status_code == 200:
+        print("Conneciton fetched successfully")
+        return json.loads(response.text)
+    else:
+        print(f"Error fetcing conneciton message: {response.status_code}")
+
+    return None
 
 def send_message(conn_id, content):
     base_url = os.environ.get("TRACTION_BASE_URL")
-    token = os.environ.get("TRACTION_AUTH_TOKEN")
     endpoint = f"/connections/{conn_id}/send-message"
     url = urljoin(base_url, endpoint)
-    headers = {"Content-Type": "application/json", "accept": "application/json", "Authorization": f"Bearer {token}"}  
+
+    token = fetch_bearer_token()
+
+    headers = {
+        "Content-Type": "application/json",
+        "accept": "application/json",
+        "Authorization": f"Bearer {token}"
+    }
     data = {"content": content}
 
     print(f"Sending message to {conn_id}, message = {content}")
@@ -24,10 +86,16 @@ def offer_attestation_credential(conn_id):
     print("issue_attestation_credential")
 
     base_url = os.environ.get("TRACTION_BASE_URL")
-    token = os.environ.get("TRACTION_AUTH_TOKEN")
     endpoint = "/issue-credential/send-offer"
     url = urljoin(base_url, endpoint)
-    headers = {"Content-Type": "application/json", "accept": "application/json", "Authorization": f"Bearer {token}"}
+
+    token = fetch_bearer_token()
+
+    headers = {
+        "Content-Type": "application/json",
+        "accept": "application/json",
+        "Authorization": f"Bearer {token}"
+    }
 
     with open('fixtures/offer.json', 'r') as f:
         offer = json.load(f)

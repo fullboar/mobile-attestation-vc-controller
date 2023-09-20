@@ -9,3 +9,4 @@ logs.txt
 attestation.json
 .env
 __pycache__/*
+expo-attestation

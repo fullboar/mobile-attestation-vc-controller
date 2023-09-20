@@ -1,10 +1,32 @@
-from flask import Flask, request, make_response, jsonify
 import base64
 import json
-from traction import send_message, offer_attestation_credential
+import secrets
+import time
+from flask import Flask, request, make_response, jsonify
+from traction import get_connection, send_message, offer_attestation_credential
 from apple import verify_attestation_statement
 
 app = Flask(__name__)
+
+def handle_connection(connection_id):
+    print("handle_connection")
+
+    connection = get_connection(connection_id)
+    if connection['rfc23_state'] != 'completed':
+        print("connection is not completed")
+        return
+
+    with open('fixtures/request_attestation.json', 'r') as f:
+        request_attestation = json.load(f)
+
+    request_attestation['nonce'] = secrets.token_hex(16)
+    json_str = json.dumps(request_attestation)
+    base64_str = base64.b64encode(json_str.encode('utf-8')).decode('utf-8')
+
+    print(f"sending request attestation message to {connection_id}")
+
+    send_message(connection_id, base64_str)
+
 
 def handle_message(message, content):
     action = content.get('action')
@@ -18,14 +40,15 @@ def handle_message(message, content):
 def handle_request_issuance_action(connection_id, content):
     print("handle_request_issuance_action")
 
-    with open('fixtures/request_attestation.json', 'r') as f:
-        request_attestation = json.load(f)
+    return
+    # with open('fixtures/request_attestation.json', 'r') as f:
+    #     request_attestation = json.load(f)
 
-    request_attestation['nonce'] = "1234567890"
-    json_str = json.dumps(request_attestation)
-    base64_str = base64.b64encode(json_str.encode('utf-8')).decode('utf-8')
+    # request_attestation['nonce'] = secrets.token_hex(16)
+    # json_str = json.dumps(request_attestation)
+    # base64_str = base64.b64encode(json_str.encode('utf-8')).decode('utf-8')
 
-    send_message(connection_id, base64_str)
+    # send_message(connection_id, base64_str)
 
 def handle_chalange_response(connection_id, content):
     print("handle_attestation_chalange")
@@ -65,6 +88,7 @@ def decode_base64_to_json(s):
 
 @app.route('/topic/basicmessages/', methods=['POST'])
 def basicmessages():
+    print("Run POST /topic/basicmessages/")
     message = request.get_json()
     content = message['content']
 
@@ -75,6 +99,17 @@ def basicmessages():
 
     return make_response('', 204)
 
+@app.route('/topic/connections/', methods=['POST'])
+def connections():
+    print("Run POST /topic/connections/")
+
+    connection = request.get_json()
+    print(f"Recieved conneciton = {connection}")
+    connectionId = connection['connection_id']
+
+    handle_connection(connectionId)
+
+    return make_response('', 204)
 
 if __name__ == '__main__':
     app.run(debug=True)

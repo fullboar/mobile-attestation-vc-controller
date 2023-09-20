@@ -1,4 +1,20 @@
 
+## Usefull Packages
+
+https://github.com/invertase/react-native-firebase/tree/main#readme
+https://www.npmjs.com/package/@react-native-firebase/app-check
+`npm i -S @react-native-firebase/app-check`
+
+https://github.com/kedros-as/react-native-google-play-integrity
+https://www.npmjs.com/package/react-native-google-play-integrity
+`npm i -S react-native-google-play-integrity`
+
+https://github.com/bpofficial/expo-attestation#readme
+https://www.npmjs.com/package/expo-attestation
+`npm i -S expo-attestation`
+
+
+## Handy Test Commands
 ```bash
 jq --arg content "$(cat fixtures/request_issuance.json | base64)" --arg name "jason" '.content |= $content | .name |= $name' fixtures/basic_message.json
 ```
