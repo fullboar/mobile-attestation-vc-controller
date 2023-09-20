@@ -1,5 +1,77 @@
+# TL;DR
 
-## Usefull Packages
+This is a Proof of Concept (PoC) of a ACA-py controller for mobile application attestation. It has the following features:
+
+- [x] Apple App Attestation - WIP
+- [ ] Android SafetyNet API
+- [ ] Android Play Integrity API
+- [ ] Apple Fraud Detection API
+- [ ] AppStore Receipt Checking (iOS <14.0)
+
+# Development
+
+While this controller can be run as a controller for any ACA-py instance, it was developed using "Traction" as the front end. Any documentation or references should be considered in that context.
+
+## Prerequisites
+
+- VSCode
+- [Docker](https://docs.docker.com/get-docker/)
+- Traction >= 0.3.2
+- Suitable tool for exposing localhost to the internet:
+  1. [Cloudflared](https://github.com/cloudflare/cloudflared)
+  2. [ngrok](https://ngrok.com/download)
+  3. [localtunnel](https://www.npmjs.com/package/localtunnel)
+
+## How it Works
+
+When run, this program will act as a "controller" to an ACA-py agent. It uses Flux to handle DidComm basic messages, and, when prompted, will use Traction to issue a basic demo Attestation Credential.
+
+## Running
+
+First, create a `.env` file in the root of your folder by copying env.sample to `.env`, populate the values with your own.
+
+```bash
+APPLE_ATTESTATION_ROOT_CA_URL="https://www.apple.com/certificateauthority/Apple_App_Attestation_Root_CA.pem"
+TRACTION_BASE_URL="https://traction-tenant-proxy-dev.apps.silver.devops.gov.bc.ca"
+TRACTION_WALLET_ID="b1d5b628-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+TRACTION_WALLET_KEY="286e7818-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+```
+
+For simplicity, this repo comes with a `.devContainer` to allow developers to get up-and-running quickly. Use VSCode to restart or start the container. Once the container is running, you can start the controller with the following command:
+
+```bash
+python src/controller.py
+```
+
+The output should look something like this:
+
+```bash
+vscode ➜ /work (main) $ python src/controller.py 
+ * Serving Flask app 'controller'
+ * Debug mode: on
+WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on http://127.0.0.1:5000
+Press CTRL+C to quit
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 107-923-082
+```
+
+Flask will expose port `5000` and this is where you need to point whatever tool you have setup to expose localhost, for example, in the case of `ngrok`:
+
+```bash
+npx ngrok http 5000
+```
+
+Finally, whatever public endpoint is provided from, in this case `ngrok` needs to be provided to Traction as the controller endpoint. This can be done by going to Settings -> Tenant Profile and entering the URL in the `WebHook URL` field.
+
+## Notes Below Here
+
+https://developer.android.com/google/play/integrity/verdicts#device-integrity-field. You can then distinguish between MEETS_BASIC_INTEGRITY and MEETS_STRONG_INTEGRITY
+
+## Useful Packages
+
+Here are some interesting packages that may be useful:
 
 https://github.com/invertase/react-native-firebase/tree/main#readme
 https://www.npmjs.com/package/@react-native-firebase/app-check
@@ -13,11 +85,12 @@ https://github.com/bpofficial/expo-attestation#readme
 https://www.npmjs.com/package/expo-attestation
 `npm i -S expo-attestation`
 
-
 ## Handy Test Commands
+
 ```bash
 jq --arg content "$(cat fixtures/request_issuance.json | base64)" --arg name "jason" '.content |= $content | .name |= $name' fixtures/basic_message.json
 ```
+
 ```bash
 jq --arg content "$(cat fixtures/request_issuance.json | base64)" '.content |= $content' fixtures/basic_message.json|curl -v -X POST -H "Content-Type: application/json" -d @- http://localhost:5000/topic/basicmessages/
 ```
@@ -53,3 +126,7 @@ jq --arg content "$(jq -s '.[0] * .[1]' fixtures/chalange_response.json attestat
 - [ ] Verify that the authenticator data’s credentialId field is the same as the key identifier.
 
 After successfully completing these steps, you can trust the attestation object.
+
+## Android Verification Steps
+
+TBD
