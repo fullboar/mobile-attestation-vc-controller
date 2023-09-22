@@ -32,7 +32,7 @@ def handle_message(message, content):
     action = content.get('action')
     handler = {
         'request_issuance': handle_request_issuance_action,
-        'chalange_response': handle_chalange_response,
+        'challenge_response': handle_challenge_response,
     }.get(action, handle_default)
 
     return handler(message['connection_id'], content)
@@ -50,7 +50,7 @@ def handle_request_issuance_action(connection_id, content):
 
     # send_message(connection_id, base64_str)
 
-def handle_chalange_response(connection_id, content):
+def handle_challenge_response(connection_id, content):
     print("handle_attestation_chalange")
 
     platform = content.get('platform')
