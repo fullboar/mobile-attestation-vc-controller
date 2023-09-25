@@ -8,10 +8,13 @@ from apple import verify_attestation_statement
 
 app = Flask(__name__)
 
+nonce = secrets.token_hex(16)
+
 def handle_connection(connection_id):
     print("handle_connection")
 
     connection = get_connection(connection_id)
+    print(f"fetched connection = {connection}")
     if connection['rfc23_state'] != 'completed':
         print("connection is not completed")
         return
@@ -19,7 +22,7 @@ def handle_connection(connection_id):
     with open('fixtures/request_attestation.json', 'r') as f:
         request_attestation = json.load(f)
 
-    request_attestation['nonce'] = secrets.token_hex(16)
+    request_attestation['nonce'] = nonce # secrets.token_hex(16)
     json_str = json.dumps(request_attestation)
     base64_str = base64.b64encode(json_str.encode('utf-8')).decode('utf-8')
 
@@ -53,10 +56,12 @@ def handle_request_issuance_action(connection_id, content):
 def handle_challenge_response(connection_id, content):
     print("handle_attestation_chalange")
 
+    global nonce
+
     platform = content.get('platform')
 
     if platform == 'apple':
-        is_valid_chalange = verify_attestation_statement(content)
+        is_valid_chalange = verify_attestation_statement(content, nonce)
         if is_valid_chalange:
             print("chalange is valid")
             offer_attestation_credential(connection_id)
