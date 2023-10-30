@@ -1,10 +1,10 @@
 import base64
 import json
 import secrets
-import time
-from flask import Flask, request, make_response, jsonify
+from flask import Flask, request, make_response
 from traction import get_connection, send_message, offer_attestation_credential
 from apple import verify_attestation_statement
+from goog import verify_integrity_token
 
 app = Flask(__name__)
 
@@ -16,7 +16,7 @@ def handle_connection(connection_id):
         print("connection is not completed")
         return
 
-    with open('fixtures/request_attestation.json', 'r') as f:
+    with open('../fixtures/request_attestation.json', 'r') as f:
         request_attestation = json.load(f)
 
     request_attestation['nonce'] = secrets.token_hex(16)
@@ -32,7 +32,7 @@ def handle_message(message, content):
     action = content.get('action')
     handler = {
         'request_issuance': handle_request_issuance_action,
-        'chalange_response': handle_chalange_response,
+        'challenge_response': handle_challenge_response,
     }.get(action, handle_default)
 
     return handler(message['connection_id'], content)
@@ -50,18 +50,26 @@ def handle_request_issuance_action(connection_id, content):
 
     # send_message(connection_id, base64_str)
 
-def handle_chalange_response(connection_id, content):
-    print("handle_attestation_chalange")
+def handle_challenge_response(connection_id, content):
+    print("handle_attestation_challenge")
 
     platform = content.get('platform')
 
     if platform == 'apple':
-        is_valid_chalange = verify_attestation_statement(content)
-        if is_valid_chalange:
-            print("chalange is valid")
+        is_valid_challenge = verify_attestation_statement(content)
+        if is_valid_challenge:
+            print("valid apple challenge")
             offer_attestation_credential(connection_id)
         else:
-            print("chalange is invalid")
+            print("invalid apple challenge")
+    elif platform == 'google':
+        token = content.get('attestation_object')
+        is_valid_challenge = verify_integrity_token(token)
+        if is_valid_challenge:
+            print("valid google integrity verdict")
+            offer_attestation_credential(connection_id)
+        else:
+            print("invalid google integrity verdict")
     else:
         print("unsupported platform")
 
@@ -110,6 +118,7 @@ def connections():
     handle_connection(connectionId)
 
     return make_response('', 204)
+
 
 if __name__ == '__main__':
     app.run(debug=True)
