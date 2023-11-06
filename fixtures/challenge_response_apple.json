@@ -2,7 +2,7 @@
   "type": "attestation",
   "platform": "apple",
   "version": 1,
-  "action": "chalange_response",
+  "action": "challenge_response",
   "key_id": "eyAiQHR5...=",
   "attestation_object": "eyAiQHR5...="
 }

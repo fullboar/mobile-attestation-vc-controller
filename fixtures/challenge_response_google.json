@@ -1,0 +1,7 @@
+{
+  "type": "attestation",
+  "platform": "google",
+  "version": 1,
+  "action": "challenge_response",
+  "attestation_object": "eyAiQHR5...="
+}
