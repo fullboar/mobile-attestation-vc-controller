@@ -5,3 +5,4 @@ flask
 jsonify
 python-dotenv
 requests
+gunicorn
