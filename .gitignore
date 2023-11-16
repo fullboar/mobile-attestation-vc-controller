@@ -7,7 +7,15 @@ coverage
 .DS_Store
 logs.txt
 attestation.json
-.env
-__pycache__/
 expo-attestation
 oauth.json
+__pycache__
+
+# Ignore all .env files and secrets
+.env
+*key*
+*secret*
+*secrets*
+
+# Ignore merge artifacts
+*.orig
