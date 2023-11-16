@@ -3,8 +3,7 @@
 This is a Proof of Concept (PoC) of a ACA-py controller for mobile application attestation. It has the following features:
 
 - [x] Apple App Attestation - WIP
-- [ ] Android SafetyNet API
-- [ ] Android Play Integrity API
+- [x] Android Play Integrity API
 - [ ] Apple Fraud Detection API
 - [ ] AppStore Receipt Checking (iOS <14.0)
 
@@ -28,19 +27,23 @@ When run, this program will act as a "controller" to an ACA-py agent. It uses Fl
 
 ## Running
 
-First, create a `.env` file in the root of your folder by copying env.sample to `.env`, populate the values with your own.
+First, create a `.env` file in the root of your folder by copying env.sample to `.env`, populate the values with your own. For Android Attestation you will need a Google OAuth JSON key in `/src` configured for your app.
 
 ```bash
 APPLE_ATTESTATION_ROOT_CA_URL="https://www.apple.com/certificateauthority/Apple_App_Attestation_Root_CA.pem"
 TRACTION_BASE_URL="https://traction-tenant-proxy-dev.apps.silver.devops.gov.bc.ca"
 TRACTION_WALLET_ID="b1d5b628-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
 TRACTION_WALLET_KEY="286e7818-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+GOOGLE_AUTH_JSON_PATH="path_to_google_oauth_json_key_from_src.json"
 ```
+
+You will also need to create a schema and credential definition id in your Traction instance and then add it to `fixtures/offer.json`, following the format.
 
 For simplicity, this repo comes with a `.devContainer` to allow developers to get up-and-running quickly. Use VSCode to restart or start the container. Once the container is running, you can start the controller with the following command:
 
 ```bash
-python src/controller.py
+cd src
+python controller.py
 ```
 
 The output should look something like this:
@@ -129,4 +132,8 @@ After successfully completing these steps, you can trust the attestation object.
 
 ## Android Verification Steps
 
-TBD
+- [x] Get Integrity Verdict from Google's server via their python client
+- [x] Verify the package info matches our app
+- [x] Verify the device integrity fields
+- [ ] Verify the app integrity fields (left commented out while in development)
+- [ ] Verify the nonce in the verdict payload matches the nonce the controller sent to the device 
