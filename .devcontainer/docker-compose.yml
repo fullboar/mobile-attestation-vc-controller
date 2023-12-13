@@ -1,0 +1,14 @@
+version: '3.9'
+
+networks:
+  local_network:
+    name: local_network
+
+services:
+  redis:
+    image: redis:7.2.3-alpine
+    ports:
+      - '6379:6379'
+    tty: true
+    networks:
+      - local_network

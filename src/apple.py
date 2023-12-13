@@ -173,10 +173,7 @@ def verify_attestation_statement(attestation_object, nonce):
         print('Apple Attestation step 4...')
         extension_value = extract_attestation_object_extension(apple_attestation_object)
         if (extension_value != composite_nonce):
-            # this step is failing without caching nonce so commenting out for now
-            #     return False
-            print('extension_value:', extension_value)
-            print('composite_nonce:', composite_nonce)
+            return False
 
         # 5. Create the SHA256 hash of the public key in credCert, and verify that it matches the
         # key identifier from your app.
@@ -233,13 +230,7 @@ def verify_attestation_statement(attestation_object, nonce):
         return False
 
 def main():
-    # placeholder until caching is implemented
-    server_side_nonce = '1234567890'
-
-    with open("attestation.json", "r") as f:
-        attestation_as_json = json.load(f)
-
-    verify_attestation_statement(attestation_as_json, server_side_nonce)
+    pass
 
 
 if __name__ == "__main__":
