@@ -23,3 +23,5 @@ services:
     tty: true
     networks:
       - local_network
+    environment:
+      - REDIS_URL=redis://redis:6379/0

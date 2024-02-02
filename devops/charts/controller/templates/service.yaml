@@ -3,7 +3,9 @@ apiVersion: v1
 kind: Service
 metadata:
   name: {{include "attestation-controller.fullname" .}}
-  labels: {{- include "attestation-controller.labels" . | nindent 4}}
+  labels: 
+    app.kubernetes.io/component: controller
+    {{- include "attestation-controller.labels" . | nindent 4}}
 spec:
   ports:
     - port: {{.Values.service.targetPort}}

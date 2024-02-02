@@ -1,0 +1,13 @@
+{
+    "attributes": [
+        "issue_date_dateint",
+        "validation_method",
+        "app_version",
+        "app_vendor",
+        "app_id",
+        "operating_system",
+        "operating_system_version"
+    ],
+    "schema_name": "app_attestation",
+    "schema_version": "1.0"
+}

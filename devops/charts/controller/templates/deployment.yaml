@@ -10,6 +10,7 @@ spec:
   {{- end }}  
   selector:
     matchLabels:
+      app.kubernetes.io/component: controller
       {{- include "attestation-controller.selectorLabels" . | nindent 6 }}
   template:
     metadata:
@@ -18,6 +19,7 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
+        app.kubernetes.io/component: controller
         {{- include "attestation-controller.labels" . | nindent 8 }}
 	      {{- with .Values.podLabels }}
           {{- toYaml . | nindent 8 }}
@@ -26,7 +28,7 @@ spec:
       volumes:
         - name: google-oauth-key
           secret:
-            secretName: google-oauth-key
+            secretName: {{ include "attestation-controller.fullname" . }}-google-oauth-key
       imagePullSecrets:
         {{- toYaml .Values.imagePullSecrets | nindent 8 }}
       containers:
@@ -55,7 +57,9 @@ spec:
           #   timeoutSeconds: 3
           envFrom:
             - secretRef:
-                name: traction-creds
+                name: {{ include "attestation-controller.fullname" . }}-traction-creds
+            - secretRef:
+                name: {{ include "attestation-controller.fullname" . }}-redis-creds
           env:
             - name: PORT
               value: {{.Values.service.targetPort | quote}}
