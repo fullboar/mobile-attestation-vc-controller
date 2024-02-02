@@ -8,6 +8,7 @@ load_dotenv()
 
 bearer_token = None
 
+
 def fetch_bearer_token():
     global bearer_token
 
@@ -29,10 +30,11 @@ def fetch_bearer_token():
         print("Token fetched successfully")
         response_data = json.loads(response.text)
 
-        bearer_token = response_data['token']
+        bearer_token = response_data["token"]
         return bearer_token
     else:
         print(f"Error fetcing token: {response.status_code}")
+
 
 def get_connection(conn_id):
     base_url = os.environ.get("TRACTION_BASE_URL")
@@ -44,7 +46,7 @@ def get_connection(conn_id):
     headers = {
         "Content-Type": "application/json",
         "accept": "application/json",
-        "Authorization": f"Bearer {token}"
+        "Authorization": f"Bearer {token}",
     }
 
     print(f"Fetching connection {conn_id}")
@@ -59,6 +61,7 @@ def get_connection(conn_id):
 
     return None
 
+
 def send_message(conn_id, content):
     base_url = os.environ.get("TRACTION_BASE_URL")
     endpoint = f"/connections/{conn_id}/send-message"
@@ -69,7 +72,7 @@ def send_message(conn_id, content):
     headers = {
         "Content-Type": "application/json",
         "accept": "application/json",
-        "Authorization": f"Bearer {token}"
+        "Authorization": f"Bearer {token}",
     }
     data = {"content": content}
 
@@ -81,6 +84,7 @@ def send_message(conn_id, content):
         print("Message sent successfully")
     else:
         print(f"Error sending message: {response.status_code}")
+
 
 def offer_attestation_credential(conn_id):
     print("issue_attestation_credential")
@@ -94,14 +98,14 @@ def offer_attestation_credential(conn_id):
     headers = {
         "Content-Type": "application/json",
         "accept": "application/json",
-        "Authorization": f"Bearer {token}"
+        "Authorization": f"Bearer {token}",
     }
 
     message_templates_path = os.getenv("MESSAGE_TEMPLATES_PATH")
-    with open(os.path.join(message_templates_path, 'offer.json'), 'r') as f:
+    with open(os.path.join(message_templates_path, "offer.json"), "r") as f:
         offer = json.load(f)
 
-    offer['connection_id'] = conn_id
+    offer["connection_id"] = conn_id
 
     print(f"Sending offer to {conn_id}, offer = {offer}")
 
@@ -111,3 +115,59 @@ def offer_attestation_credential(conn_id):
         print("Offer sent successfully")
     else:
         print(f"Error sending offer: {response.status_code}")
+
+
+def get_schema(schema_id):
+    print("get_schema")
+
+    base_url = os.environ.get("TRACTION_BASE_URL")
+    endpoint = "/schemas/created"
+    url = urljoin(base_url, endpoint)
+
+    token = fetch_bearer_token()
+
+    headers = {
+        "Content-Type": "application/json",
+        "accept": "application/json",
+        "Authorization": f"Bearer {token}",
+    }
+
+    response = requests.get(url, headers=headers, params={"schema_id": schema_id})
+
+    if response.status_code == 200:
+        print("Schema queried successfully")
+    else:
+        print(f"Error quering schema: {response.status_code}")
+
+    return response.json()
+
+
+def create_schema(schema_name, schema_version, attributes):
+    print("create_schema")
+
+    base_url = os.environ.get("TRACTION_BASE_URL")
+    endpoint = "/schemas"
+    url = urljoin(base_url, endpoint)
+
+    token = fetch_bearer_token()
+
+    headers = {
+        "Content-Type": "application/json",
+        "accept": "application/json",
+        "Authorization": f"Bearer {token}",
+    }
+
+    schema = {
+        "schema_name": schema_name,
+        "schema_version": schema_version,
+        "attributes": attributes,
+    }
+
+    response = requests.post(url, headers=headers, data=json.dumps(schema))
+
+    if response.status_code == 200:
+        print("Schema created successfully")
+    else:
+        print(f"Error creating schema: {response.status_code}")
+
+    return response.json()

@@ -78,6 +78,7 @@ The general command to deploy this to an OpenShift cluster is:
 helm template <RELEASE> ./devops/charts/controller
 --set-string wallet_id=<WALLET_ID> \
 --set-string wallet_key=<WALLET_KEY> \
+--set-string redis_url=<REDIS_URL> \
 --set-file google_oauth_key.json=<PATH_TO_GOOGLE_OAUTH_KEY>| \
 oc apply -n <NAMESPACE> -f -
 ```
@@ -88,6 +89,7 @@ And example command to deploy to the `e79518-dev` namespace is:
 helm template bcwallet ./devops/charts/controller
 --set-string wallet_id=123-456-789 \
 --set-string wallet_key=abc-def-ghi \
+--set-string redis_url=redis://redis:6379/0 \
 --set-file google_oauth_key.json=./google_oauth_key.json| \
 oc apply -n e79518-dev -f -
 ```

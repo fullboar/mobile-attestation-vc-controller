@@ -14,11 +14,14 @@
   "workspaceFolder": "/work",
   // Install Python and pipenv using pyenv
   // "postCreateCommand": "pip install pipenv && pyenv install 3.11.4 && pyenv global 3.11.4",
-  "postCreateCommand": "pip --disable-pip-version-check --no-cache-dir install -r requirements.txt",
+  "postCreateCommand": "pip --disable-pip-version-check --no-cache-dir install -r requirements.txt && curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash",
   "runArgs": [
     "--env-file",
     ".devcontainer/devcontainer.env"
   ],
+  "containerEnv": {
+    "FLASK_ENV": "development"
+  },
   "customizations": {
     "vscode": {
       "extensions": [

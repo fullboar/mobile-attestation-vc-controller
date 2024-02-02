@@ -1,3 +1,7 @@
 import redis
+import os
 
-redis_instance = redis.Redis(host='redis', port=6379, decode_responses=True)
+# Get the Redis URL from environment variables
+redis_url = os.getenv('REDIS_URL')
+
+redis_instance = redis.from_url(redis_url, decode_responses=True)

@@ -15,3 +15,30 @@ spec:
               network.openshift.io/policy-group: ingress
   policyTypes:
     - Ingress
+---
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: {{include "attestation-controller.fullname" .}}
+  labels: {{- include "attestation-controller.labels" . | nindent 4}}
+  annotations: {{- toYaml .Values.route.annotations | nindent 4}}
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/component: redis
+      app.kubernetes.io/instance: shared
+      app.kubernetes.io/name: redis
+  ingress:
+    - ports:
+      - protocol: TCP
+        port: 6379
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/component: controller
+              {{- include "attestation-controller.selectorLabels" . | nindent 14 }}
+          namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ .Values.namespace }}
+  policyTypes:
+    - Ingress
