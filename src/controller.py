@@ -80,9 +80,9 @@ def handle_challenge_response(connection_id, content):
     app_version = content.get("app_version")
     os_version_parts = content.get("os_version").split(" ")
     method = (
-        AttestationMethod.AppleAppAttestation.name
+        AttestationMethod.AppleAppAttestation.value
         if platform == "apple"
-        else AttestationMethod.GooglePlayIntegrity.name
+        else AttestationMethod.GooglePlayIntegrity.value
     )
     is_valid_challenge = False
 
