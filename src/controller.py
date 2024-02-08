@@ -9,7 +9,8 @@ from goog import verify_integrity_token
 import os
 from dotenv import load_dotenv
 from redis_config import redis_instance
-from constants import auto_expire_nonce
+from constants import auto_expire_nonce, app_id, app_vendor, AttestationMethod
+from datetime import datetime
 
 if os.getenv("FLASK_ENV") == "development":
     load_dotenv()
@@ -45,9 +46,10 @@ def report_failure(connection_id):
 def handle_request_nonce(connection_id, content):
     logger.info("handle_request_nonce")
     connection = get_connection(connection_id)
-    logger.info(f"fetched connection = {connection}")
-    if connection["rfc23_state"] != "completed":
-        logger.info("connection is not completed")
+    logger.info(f"fetched connection, id = {connection_id}")
+
+    if connection is None or connection["rfc23_state"] != "completed":
+        logger.info(f"connection not completed, id = {connection_id}")
         return
 
     message_templates_path = os.getenv("MESSAGE_TEMPLATES_PATH")
@@ -73,7 +75,16 @@ def handle_request_nonce(connection_id, content):
 def handle_challenge_response(connection_id, content):
     logger.info("handle_attestation_challenge")
 
+    attestation_object = content.get("attestation_object")
     platform = content.get("platform")
+    app_version = content.get("app_version")
+    os_version_parts = content.get("os_version").split(" ")
+    method = (
+        AttestationMethod.AppleAppAttestation.name
+        if platform == "apple"
+        else AttestationMethod.GooglePlayIntegrity.name
+    )
+    is_valid_challenge = False
 
     # fetch nonce from cache using connection id as key
     nonce = redis_instance.get(connection_id)
@@ -82,25 +93,39 @@ def handle_challenge_response(connection_id, content):
         report_failure(connection_id)
         return
 
+    message_templates_path = os.getenv("MESSAGE_TEMPLATES_PATH")
+    with open(os.path.join(message_templates_path, "offer.json"), "r") as f:
+        offer = json.load(f)
+
+    offer["connection_id"] = connection_id
+    offer["credential_preview"]["attributes"] = [
+        {"name": "operating_system", "value": os_version_parts[0]},
+        {"name": "operating_system_version", "value": os_version_parts[1]},
+        {"name": "validation_method", "value": method},
+        {"name": "app_id", "value": ".".join(app_id.split(".")[1:])},
+        {"name": "app_vendor", "value": app_vendor},
+        {"name": "issue_date_dateint", "value": datetime.now().strftime("%Y%m%d")},
+        {"name": "app_version", "value": app_version},
+    ]
+
     if platform == "apple":
-        is_valid_challenge = verify_attestation_statement(content, nonce)
-        if is_valid_challenge:
-            logger.info("valid apple challenge")
-            offer_attestation_credential(connection_id)
-        else:
-            logger.info("invalid apple challenge")
-            report_failure(connection_id)
+        logger.info("testing apple challenge")
+        key_id = content.get("key_id")
+        is_valid_challenge = verify_attestation_statement(
+            attestation_object, key_id, nonce
+        )
     elif platform == "google":
-        token = content.get("attestation_object")
-        is_valid_challenge = verify_integrity_token(token, nonce)
-        if is_valid_challenge:
-            logger.info("valid google integrity verdict")
-            offer_attestation_credential(connection_id)
-        else:
-            logger.info("invalid google integrity verdict")
-            report_failure(connection_id)
+        logger.info("testing google challenge")
+        is_valid_challenge = verify_integrity_token(attestation_object, nonce)
     else:
         logger.info("unsupported platform")
+        report_failure(connection_id)
+
+    if is_valid_challenge:
+        logger.info("valid challenge")
+        offer_attestation_credential(offer)
+    else:
+        logger.info("invalid challenge")
         report_failure(connection_id)
 
 
@@ -148,4 +173,4 @@ def basicmessages():
 
 
 if __name__ == "__main__":
-    server.run(debug=True)
+    server.run(debug=True, port=5501)
