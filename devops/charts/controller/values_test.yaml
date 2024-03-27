@@ -15,9 +15,8 @@ podLabels: {}
 
 image:
   pullPolicy: IfNotPresent
-  # registry: artifacts.developer.gov.bc.ca/github-docker-remote
-  # repository: bcgov/mobile-attestation-vc-controller/controller
-  registry: ghcr.io
+  registry: artifacts.developer.gov.bc.ca/github-docker-remote
+  # registry: ghcr.io
   repository: bcgov/mobile-attestation-vc-controller/controller
   # Overrides the image tag whose default is the chart appVersion.
   tag: "ec7866c"
