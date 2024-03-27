@@ -151,6 +151,23 @@ oc apply -n e79518-dev -f -
 
 The release name can be anything you want, but it must be unique to the namespace. When deploying to a shared namespace like `e79518-dev`, it is recommended use the a meaningful release name that will help reason about what the controller is doing.
 
+If you are deploying to a namespace that **already has a controller**, you can set your environment variables with the following helpful commands:
+
+```console
+export TRACTION_TENANT_API_KEY=$(oc get secret/bcwallet-attestation-controller-traction-creds -o json| jq -r ".data.TRACTION_TENANT_API_KEY"|base64 -d) && \ 
+echo $TRACTION_TENANT_API_KEY
+```
+
+```console
+export TRACTION_TENANT_ID=$(oc get secret/bcwallet-attestation-controller-traction-creds -o json| jq -r ".data.TRACTION_TENANT_ID"|base64 -d) && \ 
+echo $TRACTION_TENANT_ID
+```
+```
+console
+export TRACTION_LEGACY_DID=$(oc get secret/bcwallet-attestation-controller-traction-creds -o json| jq -r ".data.TRACTION_LEGACY_DID"|base64 -d) && \ 
+echo $TRACTION_LEGACY_DID
+```
+
 ## Notes Below Here
 
 https://developer.android.com/google/play/integrity/verdicts#device-integrity-field. You can then distinguish between MEETS_BASIC_INTEGRITY and MEETS_STRONG_INTEGRITY

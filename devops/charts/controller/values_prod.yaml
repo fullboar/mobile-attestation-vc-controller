@@ -2,24 +2,27 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
-replicaCount: 1
+replicaCount: 3
 
 autoscaling:
-  enabled: false
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 80
 
 podAnnotations: {}
 podLabels: {}
 
 image:
-  pullPolicy: Always
+  pullPolicy: IfNotPresent
   registry: artifacts.developer.gov.bc.ca/github-docker-remote
   # registry: ghcr.io
   repository: bcgov/mobile-attestation-vc-controller/controller
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "ec7866c"
+  tag: "80d6bf3"
 
 env:
-  TRACTION_BASE_URL: "https://traction-tenant-proxy-dev.apps.silver.devops.gov.bc.ca"
+  TRACTION_BASE_URL: "https://traction-tenant-proxy-test.apps.silver.devops.gov.bc.ca"
   APPLE_ATTESTATION_ROOT_CA_URL: "https://www.apple.com/certificateauthority/Apple_App_Attestation_Root_CA.pem"
   GOOGLE_AUTH_JSON_PATH: "/opt/controller/google_oauth_key.json"
   MESSAGE_TEMPLATES_PATH: "/opt/fixtures/"
