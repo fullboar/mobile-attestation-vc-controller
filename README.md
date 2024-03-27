@@ -162,8 +162,8 @@ echo $TRACTION_TENANT_API_KEY
 export TRACTION_TENANT_ID=$(oc get secret/bcwallet-attestation-controller-traction-creds -o json| jq -r ".data.TRACTION_TENANT_ID"|base64 -d) && \ 
 echo $TRACTION_TENANT_ID
 ```
-```
-console
+
+```console
 export TRACTION_LEGACY_DID=$(oc get secret/bcwallet-attestation-controller-traction-creds -o json| jq -r ".data.TRACTION_LEGACY_DID"|base64 -d) && \ 
 echo $TRACTION_LEGACY_DID
 ```
