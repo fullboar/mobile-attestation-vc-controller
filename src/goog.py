@@ -3,6 +3,7 @@ import logging
 from googleapiclient.discovery import build
 from google.oauth2 import service_account
 from dotenv import load_dotenv
+from constants import integrity_scope, bc_wallet_package_name, PLAY_RECOGNIZED
 
 dev_mode = os.getenv("FLASK_ENV") == "development"
 allow_test_builds = os.getenv("ALLOW_TEST_BUILDS") == "true"
@@ -12,11 +13,6 @@ if dev_mode:
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-path = os.getenv("GOOGLE_AUTH_JSON_PATH")
-creds = service_account.Credentials.from_service_account_file(
-    path, scopes=["https://www.googleapis.com/auth/playintegrity"]
-)
-
 
 # should eventually confirm nonce matches here
 def isValidVerdict(verdict, nonce):
@@ -37,28 +33,31 @@ def isValidVerdict(verdict, nonce):
 
         if (
             verdict_nonce == nonce
-            and request_package_name == "ca.bc.gov.BCWallet"
-            and package_name == "ca.bc.gov.BCWallet"
+            and request_package_name == bc_wallet_package_name
+            and package_name == bc_wallet_package_name
             and set(valid_device_verdicts).issubset(device_verdicts)
-            and (app_verdict == "PLAY_RECOGNIZED" or allow_test_builds)
+            and (app_verdict == PLAY_RECOGNIZED or allow_test_builds)
         ):
             return True
         else:
             return False
     except Exception as e:
-        print(e)
-        logger.info("Error evaluating verdict:", e)
+        logger.error(f"Error evaluating verdict: {e}")
         return False
 
 
 # decrypt the integrity token on google's servers
 def verify_integrity_token(token, nonce):
     try:
+        path = os.getenv("GOOGLE_AUTH_JSON_PATH")
+        creds = service_account.Credentials.from_service_account_file(
+            path, scopes=[integrity_scope]
+        )
         service = build("playintegrity", "v1", credentials=creds)
         body = {"integrityToken": token}
         instance = service.v1()
         verdict = instance.decodeIntegrityToken(
-            packageName="ca.bc.gov.BCWallet", body=body
+            packageName=bc_wallet_package_name, body=body
         ).execute()
 
         if isValidVerdict(verdict, nonce):
@@ -66,7 +65,7 @@ def verify_integrity_token(token, nonce):
         else:
             return False
     except Exception as e:
-        logger.info("Error verifying integrity token:", e)
+        logger.error(f"Error verifying integrity token: {e}")
         return False
 
 

@@ -17,6 +17,7 @@ def fetch_bearer_token():
     global bearer_token
 
     if bearer_token:
+        logger.info("Found existing bearer token, returning it")
         return bearer_token
 
     base_url = os.environ.get("TRACTION_BASE_URL")
@@ -35,9 +36,13 @@ def fetch_bearer_token():
         response_data = json.loads(response.text)
 
         bearer_token = response_data["token"]
+        if bearer_token is None:
+            logger.error("Token doesn't exist in response data")
+
         return bearer_token
     else:
-        logger.info(f"Error fetcing token: {response.status_code}")
+        logger.error(f"Error fetching token: {response.status_code}")
+        logger.error(f"Text content for error: {response.text}")
 
 
 def get_connection(conn_id):
@@ -58,10 +63,11 @@ def get_connection(conn_id):
     response = requests.get(url, headers=headers)
 
     if response.status_code == 200:
-        logger.info("Conneciton fetched successfully")
+        logger.info("Connection fetched successfully")
         return json.loads(response.text)
     else:
-        logger.info(f"Error fetcing conneciton message: {response.status_code}")
+        logger.error(f"Error fetching connection message: {response.status_code}")
+        logger.error(f"Text content for error: {response.text}")
 
     return None
 
@@ -99,7 +105,7 @@ def send_generic_message(conn_id, endpoint, message):
     if response.status_code == 200:
         logger.info("Message sent successfully")
     else:
-        logger.info(f"Error sending message: {response.status_code} {response.text}")
+        logger.error(f"Error sending message: {response.status_code} {response.text}")
 
 
 def send_message(conn_id, content):
@@ -123,7 +129,7 @@ def send_message(conn_id, content):
     if response.status_code == 200:
         logger.info("Message sent successfully")
     else:
-        logger.info(f"Error sending message: {response.status_code}")
+        logger.error(f"Error sending message: {response.status_code}")
 
 
 def offer_attestation_credential(offer):
@@ -148,7 +154,8 @@ def offer_attestation_credential(offer):
     if response.status_code == 200:
         logger.info("Offer sent successfully")
     else:
-        logger.info(f"Error sending offer: {response.status_code}")
+        logger.error(f"Error sending offer: {response.status_code}")
+        logger.error(f"Text content for error: {response.text}")
 
 
 def get_schema(schema_id):
@@ -171,13 +178,14 @@ def get_schema(schema_id):
     if response.status_code == 200:
         logger.info("Schema queried successfully")
     else:
-        logger.info(f"Error quering schema: {response.status_code}")
+        logger.error(f"Error querying schema: {response.status_code}")
+        logger.error(f"Text content for error: {response.text}")
 
     return response.json()
 
 
 def get_cred_def(schema_id):
-    logger.info("get_schema")
+    logger.info("get_cred_def")
 
     base_url = os.environ.get("TRACTION_BASE_URL")
     endpoint = "/credential-definitions/created"
@@ -194,9 +202,10 @@ def get_cred_def(schema_id):
     response = requests.get(url, headers=headers, params={"schema_id": schema_id})
 
     if response.status_code == 200:
-        logger.info("Schema queried successfully")
+        logger.info("Cred def queried successfully")
     else:
-        logger.info(f"Error quering schema: {response.status_code}")
+        logger.error(f"Error querying cred def: {response.status_code}")
+        logger.error(f"Text content for error: {response.text}")
 
     return response.json()
 
@@ -227,7 +236,8 @@ def create_schema(schema_name, schema_version, attributes):
     if response.status_code == 200:
         logger.info("Schema created successfully")
     else:
-        logger.info(f"Error creating schema: {response.status_code}")
+        logger.error(f"Error creating schema: {response.status_code}")
+        logger.error(f"Text content for error: {response.text}")
 
     return response.json()
 
@@ -264,6 +274,7 @@ def create_cred_def(schema_id, tag, revocation_registry_size=0):
         return response.json()
 
     else:
-        logger.info(f"Error creating request: {response.status_code}")
+        logger.error(f"Error creating request: {response.status_code}")
+        logger.error(f"Text content for error: {response.text}")
 
     return None
