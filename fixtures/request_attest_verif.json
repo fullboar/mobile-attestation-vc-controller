@@ -1,0 +1,34 @@
+{
+    "comment": "",
+    "trace": false,
+    "presentation_request": {
+        "indy": {
+            "nonce": "1234567890",
+            "name": "Attestation Proof",
+            "version": "2.0",
+            "requested_attributes": {
+                "attestationInfo": {
+                    "names": [
+                        "operating_system_version",
+                        "validation_method",
+                        "app_id",
+                        "app_vendor",
+                        "issue_date_dateint",
+                        "operating_system",
+                        "app_version"
+                    ],
+                    "restrictions": [
+                        {
+                            "schema_id": "NXp6XcGeCR2MviWuY51Dva:2:app_attestation:1.0",
+                            "issuer_did": "NXp6XcGeCR2MviWuY51Dva"
+                        },
+                        {
+                            "cred_def_id": "NXp6XcGeCR2MviWuY51Dva:3:CL:33557:bcwallet"
+                        }
+                    ]
+                }
+            },
+            "requested_predicates": {}
+        }
+    }
+}

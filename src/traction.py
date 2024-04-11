@@ -300,3 +300,57 @@ def create_cred_def(schema_id, tag, revocation_registry_size=0):
         logger.error(f"Text content for error: {response.text}")
 
     return None
+
+
+def create_presentation_request(presentation_data):
+    logger.info("create_presentation_request")
+
+    base_url = os.environ.get("TRACTION_BASE_URL")
+    endpoint = "/present-proof-2.0/create-request"
+    url = urljoin(base_url, endpoint)
+
+    token = fetch_bearer_token()
+
+    headers = {
+        "Content-Type": "application/json",
+        "accept": "application/json",
+        "Authorization": f"Bearer {token}",
+    }
+
+    logger.info(f"Creating presentation request = {presentation_data}")
+
+    response = requests.post(url, headers=headers, data=json.dumps(presentation_data))
+
+    if response.status_code == 200:
+        logger.info("Request creation successfully")
+        return response.json()
+    else:
+        logger.error(f"Error creating request: {response.status_code}")
+        logger.error(f"Text content for error: {response.text}")
+
+
+def send_presentation_request(request):
+    logger.info("send_presentation_request")
+
+    base_url = os.environ.get("TRACTION_BASE_URL")
+    endpoint = "/present-proof-2.0/send-request"
+    url = urljoin(base_url, endpoint)
+
+    token = fetch_bearer_token()
+
+    headers = {
+        "Content-Type": "application/json",
+        "accept": "application/json",
+        "Authorization": f"Bearer {token}",
+    }
+
+    logger.info(f"Sending presentation request = {request}")
+
+    response = requests.post(url, headers=headers, data=json.dumps(request))
+
+    if response.status_code == 200:
+        logger.info("Request sent successfully")
+        return response.json()
+    else:
+        logger.error(f"Error sending request: {response.status_code}")
+        logger.error(f"Text content for error: {response.text}")
