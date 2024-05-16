@@ -19,11 +19,11 @@
                     ],
                     "restrictions": [
                         {
-                            "schema_id": "NXp6XcGeCR2MviWuY51Dva:2:app_attestation:1.0",
-                            "issuer_did": "NXp6XcGeCR2MviWuY51Dva"
+                            "schema_id": "XqaRXJt4sXE6TRpfGpVbGw:2:app_attestation:1.0",
+                            "issuer_did": "XqaRXJt4sXE6TRpfGpVbGw"
                         },
                         {
-                            "cred_def_id": "NXp6XcGeCR2MviWuY51Dva:3:CL:33557:bcwallet"
+                            "cred_def_id": "XqaRXJt4sXE6TRpfGpVbGw:3:CL:655:bcwallet"
                         }
                     ]
                 }
