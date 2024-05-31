@@ -5,6 +5,7 @@ import random
 from flask import Flask, request, make_response
 from traction import (
     send_drpc_response,
+    send_drpc_request,
     offer_attestation_credential,
 )
 from apple import verify_attestation_statement
@@ -41,25 +42,58 @@ error_codes = {
 
 def handle_drpc_request(drpc_request, connection_id):
     handler = {
-        "request_nonce": handle_drpc_request_nonce,
-        "request_attestation": handle_drpc_request_attestation,
+        "request_nonce": handle_drpc_request_nonce_v1,
+        "request_nonce_v2": handle_drpc_request_nonce_v2,
+        "request_attestation_v2": handle_drpc_request_attestation_v2,
     }.get(drpc_request["method"], handle_drpc_default)
 
     return handler(drpc_request, connection_id)
 
 
+def handle_drpc_response(drpc_response, connection_id):
+    handler = {
+        "request_attestation_v1": handle_drpc_request_attestation_v1,
+    }.get(drpc_response["request"]["method"], handle_drpc_default)
+
+    return handler(drpc_response, connection_id)
+
+
 def handle_drpc_default(drpc_request, connection_id):
     return {
         "jsonrpc": "2.0",
-        "error": {"code": -32601, "message": "method not found"},
+        "error": {
+            "code": 32601,
+            "message": f"{error_codes.get(32601, 'Unknown error')}",
+        },
         "id": drpc_request.get("id", random.randint(0, 1000000)),
     }
 
 
-def handle_drpc_request_nonce(drpc_request, connection_id):
-    logger.info("handle_drpc_request_nonce")
+def handle_drpc_request_nonce_v1(drpc_request, connection_id):
+    logger.info("handle_drpc_request_nonce_v1")
+
+    nonce = secrets.token_hex(16)
+    request_attestation = {
+        "jsonrpc": "2.0",
+        "method": "request_attestation_v1",
+        "params": {"nonce": nonce},
+        "id": random.randint(0, 1000000),
+    }
+
+    # cache nonce with connection id as key, allow it to expire
+    # after `auto_expire_nonce` seconds
+    redis_instance.setex(connection_id, auto_expire_nonce, nonce)
+
+    send_drpc_request(connection_id, request_attestation)
+
+    return {}  # return empty response
+
+
+def handle_drpc_request_nonce_v2(drpc_request, connection_id):
+    logger.info("handle_drpc_request_nonce_v2")
 
     try:
+        drpc_request_id = drpc_request.get("id", random.randint(0, 1000000))
         nonce = secrets.token_hex(16)
 
         # cache nonce with connection id as key, allow it to expire
@@ -67,33 +101,94 @@ def handle_drpc_request_nonce(drpc_request, connection_id):
         redis_instance.setex(connection_id, auto_expire_nonce, nonce)
     except Exception as e:
         logger.info(f"Unable to cache nonce for connection id: {connection_id}, {e}")
-        return report_failure(drpc_request, 32607)
+        return report_failure(drpc_request_id, 32607)
 
     response = {
         "jsonrpc": "2.0",
         "result": {"status": "success", "nonce": nonce},
-        "id": drpc_request.get("id", random.randint(0, 1000000)),
+        "id": drpc_request_id,
     }
 
     return response
 
 
-def handle_drpc_request_attestation(drpc_request, connection_id):
-    logger.info("handle_drpc_request_attestation")
+def handle_drpc_request_attestation_v1(drpc_response, connection_id):
+    logger.info("handle_drpc_request_attestation_v1")
+
+    result = drpc_response.get("response").get("result")
+    if not result:
+        logger.info("Unable to get result from drpc response")
+
+    attestation_object = result.get("attestation_object")
+    platform = result.get("platform")
+    app_version = result.get("app_version")
+    os_version = result.get("os_version")
+
+    # fetch nonce from cache using connection id as key
+    nonce = redis_instance.get(connection_id)
+    if not nonce:
+        logger.info("No cached nonce")
+
+    if None in [attestation_object, nonce, platform, app_version, os_version]:
+        logger.info("Attestation paremeters missing")
+
+    try:
+        return validate_and_offer(
+            attestation_object, nonce, platform, app_version, os_version, connection_id
+        )
+    except Exception as e:
+        logger.info(f"Error processing attestation: {e}")
+
+
+def handle_drpc_request_attestation_v2(drpc_request, connection_id):
+    logger.info("handle_drpc_request_attestation_v2")
 
     attestation_params = drpc_request.get("params")
+    drpc_request_id = drpc_request.get("id", random.randint(0, 1000000))
 
     if not attestation_params:
-        return report_failure(drpc_request, 32602)
+        return report_failure(drpc_request_id, 32602)
 
     attestation_object = attestation_params.get("attestation_object")
     platform = attestation_params.get("platform")
     app_version = attestation_params.get("app_version")
     os_version = attestation_params.get("os_version")
+    drpc_request_id = drpc_request.get("id", random.randint(0, 1000000))
 
-    if None in [attestation_object, platform, app_version, os_version]:
-        return report_failure(drpc_request, 32602)
+    # fetch nonce from cache using connection id as key
+    nonce = redis_instance.get(connection_id)
+    if not nonce:
+        logger.info("No cached nonce")
+        return report_failure(drpc_request_id, 32603)
 
+    if None in [attestation_object, nonce, platform, app_version, os_version]:
+        return report_failure(drpc_request_id, 32602)
+
+    try:
+        rv = validate_and_offer(
+            attestation_object, platform, app_version, os_version, connection_id
+        )
+
+        if rv is not None:
+            return report_failure(drpc_request_id, rv)
+
+        response = {
+            "jsonrpc": "2.0",
+            "result": {"status": "success"},
+            "id": drpc_request_id,
+        }
+
+        return response
+
+    except Exception as e:
+        logger.info(f"Error processing attestation: {e}")
+        return report_failure(drpc_request_id, 32606)
+
+
+# TODO(jl): Break into seporate validate and offer functions.
+def validate_and_offer(
+    attestation_object, nonce, platform, app_version, os_version, connection_id
+):
     os_version_parts = os_version.split(" ")
     method = (
         AttestationMethod.AppleAppAttestation.value
@@ -101,12 +196,6 @@ def handle_drpc_request_attestation(drpc_request, connection_id):
         else AttestationMethod.GooglePlayIntegrity.value
     )
     is_valid_challenge = False
-
-    # fetch nonce from cache using connection id as key
-    nonce = redis_instance.get(connection_id)
-    if not nonce:
-        logger.info("No cached nonce")
-        return report_failure(drpc_request, 32603)
 
     message_templates_path = os.getenv("MESSAGE_TEMPLATES_PATH")
     with open(os.path.join(message_templates_path, "offer.json"), "r") as f:
@@ -122,7 +211,7 @@ def handle_drpc_request_attestation(drpc_request, connection_id):
     cred_def_id = next(filter(pred, attestation_cred_def_ids), None)
     if cred_def_id is None:
         logger.info("No matching cred def id")
-        return report_failure(drpc_request, 32604)
+        return 32604
 
     offer["cred_def_id"] = cred_def_id
     offer["connection_id"] = connection_id
@@ -147,29 +236,23 @@ def handle_drpc_request_attestation(drpc_request, connection_id):
         is_valid_challenge = verify_integrity_token(attestation_object, nonce)
     else:
         logger.info("unsupported platform")
-        return report_failure(drpc_request, 32605)
+        return 32605
 
     if is_valid_challenge:
         logger.info("valid challenge")
         offer_attestation_credential(offer)
     else:
         logger.info("invalid challenge")
-        return report_failure(drpc_request, 32606)
+        return 32606
 
-    response = {
-        "jsonrpc": "2.0",
-        "result": {"status": "success"},
-        "id": drpc_request.get("id", random.randint(0, 1000000)),
-    }
-
-    return response
+    return None
 
 
-def report_failure(drpc_request, code):
+def report_failure(drpc_request_id, code):
     return {
         "jsonrpc": "2.0",
         "error": {"code": code, "message": f"{error_codes.get(code, 'Unknown error')}"},
-        "id": drpc_request.get("id", random.randint(0, 1000000)),
+        "id": drpc_request_id,
     }
 
 
@@ -202,6 +285,12 @@ def drpc_request():
 @server.route("/topic/drpc_response/", methods=["POST"])
 def drpc_response():
     logger.info("Run POST /topic/drpc_response/")
+
+    message = request.get_json()
+    connection_id = message["connection_id"]
+    drpc_response = message["response"]
+
+    handle_drpc_response(drpc_response, connection_id)
 
     return make_response("", 204)
 
