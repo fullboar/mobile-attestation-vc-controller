@@ -265,6 +265,7 @@ def ping():
     return make_response("", 204)
 
 
+# These are incoming requests a.k.a RPC calls to us from other agents.
 @server.route("/topic/drpc_request/", methods=["POST"])
 def drpc_request():
     logger.info("Run POST /topic/drpc_request/")
@@ -282,6 +283,8 @@ def drpc_request():
     return make_response("", 204)
 
 
+# These are incoming responses a.k.a responses to RPC calls we made
+# to other agents.
 @server.route("/topic/drpc_response/", methods=["POST"])
 def drpc_response():
     logger.info("Run POST /topic/drpc_response/")
