@@ -80,10 +80,12 @@ def handle_drpc_request_nonce_v1(drpc_request, connection_id):
         "id": random.randint(0, 1000000),
     }
 
-    # cache nonce with connection id as key, allow it to expire
+    # Cache nonce with connection id as key, allow it to expire
     # after `auto_expire_nonce` seconds
     redis_instance.setex(connection_id, auto_expire_nonce, nonce)
 
+    # The response to a request for a nonce is a request for
+    # attestation. This is fixed in v2 of the protocol.
     send_drpc_request(connection_id, request_attestation)
 
     return {}  # return empty response
