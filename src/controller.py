@@ -98,8 +98,8 @@ def handle_drpc_request_nonce_v2(drpc_request, connection_id):
         drpc_request_id = drpc_request.get("id", random.randint(0, 1000000))
         nonce = secrets.token_hex(16)
 
-        # cache nonce with connection id as key, allow it to expire
-        # after n seconds
+        # Cache nonce with connection id as key, allow it to expire
+        # after `auto_expire_nonce` seconds
         redis_instance.setex(connection_id, auto_expire_nonce, nonce)
     except Exception as e:
         logger.info(f"Unable to cache nonce for connection id: {connection_id}, {e}")
