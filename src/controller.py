@@ -267,6 +267,18 @@ def ping():
     return make_response("", 204)
 
 
+@server.route("/topic/issue_credential/", methods=["POST"])
+def issue_credential():
+    logger.info("Run POST /topic/issue_credential")
+
+    connection_id = request.get_json().get("connection_id")
+    state = request.get_json().get("state")
+
+    print(f"Credential for connection id {connection_id}, sate {state}"),
+
+    return make_response("", 204)
+
+
 # These are incoming requests a.k.a RPC calls to us from other agents.
 @server.route("/topic/drpc_request/", methods=["POST"])
 def drpc_request():
