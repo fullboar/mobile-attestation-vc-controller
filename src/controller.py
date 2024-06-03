@@ -168,7 +168,7 @@ def handle_drpc_request_attestation_v2(drpc_request, connection_id):
 
     try:
         rv = validate_and_offer(
-            attestation_object, platform, app_version, os_version, connection_id
+            attestation_object, nonce, platform, app_version, os_version, connection_id
         )
 
         if rv is not None:
