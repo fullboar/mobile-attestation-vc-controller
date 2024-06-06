@@ -19,7 +19,14 @@ image:
   # registry: ghcr.io
   repository: bcgov/mobile-attestation-vc-controller/controller
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "0a464e8"
+  tag: "364578c"
+
+netpol:
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: bc0192-test
 
 env:
   TRACTION_BASE_URL: "https://traction-tenant-proxy-test.apps.silver.devops.gov.bc.ca"
@@ -65,4 +72,3 @@ volumes: []
 
 # Additional volumeMounts on the output Deployment definition.
 volumeMounts: []
-
