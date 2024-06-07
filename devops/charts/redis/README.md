@@ -8,11 +8,15 @@ export REDIS_PASSWD=$(openssl rand -hex 16)
 export NAMESPACE=$(oc project --short)
 ```
 
+If you are upgradeing the cluster, you will want to keep the same password and username.
+
 ```console
 export NAMESPACE=$(oc project --short)
 export REDIS_USER=$(oc get secret -n $NAMESPACE shared-redis-creds -o jsonpath='{.data.username}' | base64 -d)
 export REDIS_PASSWD=$(oc get secret -n $NAMESPACE shared-redis-creds -o jsonpath='{.data.password}' | base64 -d)
 ```
+
+If you are installing the cluster for the first time, you will want use the verb `install` below. If you are upgrading the cluster, you will want to use the verb `upgrade` below.
 
 ```console
 helm install shared devops/charts/redis -f devops/charts/redis/values.yaml --set-string password=$REDIS_PASSWD --set-string username=$REDIS_USER --set-string namespace=$NAMESPACE
