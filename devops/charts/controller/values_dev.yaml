@@ -40,7 +40,6 @@ resources:
     cpu: 10m
   limits:
     memory: 128Mi
-    cpu: 100m
 
 imagePullSecrets:
   - name: artifactory-regcred
