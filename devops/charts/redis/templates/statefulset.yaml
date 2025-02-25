@@ -53,12 +53,10 @@ spec:
                   - -c
                   - redis-cli --user $REDISCLI_USER -h $HOSTNAME shutdown save
           livenessProbe:
-            exec:
-              command:
-                - /bin/sh
-                - -c
-                - test $(redis-cli --user $REDISCLI_USER -h $HOSTNAME ping) == PONG
-            initialDelaySeconds: 10
+            tcpSocket:
+              port: 6379
+            initialDelaySeconds: 5
+            periodSeconds: 10
             timeoutSeconds: 1
             failureThreshold: 3
           readinessProbe:
@@ -66,7 +64,7 @@ spec:
               command:
                 - /bin/sh
                 - -c
-                - test $(redis-cli --user $REDISCLI_USER -h $HOSTNAME ping) == PONG
+                - '[ "$(redis-cli --user "$REDISCLI_USER" -h "$HOSTNAME" ping)" = "PONG" ] || exit 1'
             initialDelaySeconds: 15
             timeoutSeconds: 1
             failureThreshold: 3
