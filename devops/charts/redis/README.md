@@ -1,6 +1,19 @@
-### Deploy
+# Redis Cluster Helm Chart
 
-Deploy to the selected namespae. Some commands assume you're already in the given namespace. Adjust the name your cluster by replacing `shared` appropriatly.
+This Helm chart deploys a Redis cluster to OpenShift for use with the Mobile Attestation VC Controller.
+
+## Prerequisites
+
+- Access to an OpenShift cluster with `oc` CLI configured
+- Helm 3.x installed
+
+## Deploy
+
+Deploy to the selected namespace. Adjust the release name by replacing `shared` as appropriate.
+
+### New Installation
+
+Generate new credentials and set your namespace:
 
 ```console
 export REDIS_USER=$(openssl rand -hex 16)
@@ -8,7 +21,9 @@ export REDIS_PASSWD=$(openssl rand -hex 16)
 export NAMESPACE=$(oc project --short)
 ```
 
-If you are upgradeing the cluster, you will want to keep the same password and username.
+### Upgrade Existing Cluster
+
+If you're upgrading an existing cluster, retrieve the current credentials to keep them:
 
 ```console
 export NAMESPACE=$(oc project --short)
@@ -16,13 +31,19 @@ export REDIS_USER=$(oc get secret -n $NAMESPACE shared-redis-creds -o jsonpath='
 export REDIS_PASSWD=$(oc get secret -n $NAMESPACE shared-redis-creds -o jsonpath='{.data.password}' | base64 -d)
 ```
 
-If you are installing the cluster for the first time, you will want use the verb `install` below. If you are upgrading the cluster, you will want to use the verb `upgrade` below.
+### Install or Upgrade
+
+Use `install` for a new deployment, or `upgrade` for an existing one:
 
 ```console
-helm install shared devops/charts/redis -f devops/charts/redis/values.yaml --set-string password=$REDIS_PASSWD --set-string username=$REDIS_USER --set-string namespace=$NAMESPACE
+helm install shared devops/charts/redis \
+  -f devops/charts/redis/values.yaml \
+  --set-string password=$REDIS_PASSWD \
+  --set-string username=$REDIS_USER \
+  --set-string namespace=$NAMESPACE
 ```
 
-You should see the following output:
+You should see output similar to:
 
 ```console
 networkpolicy.networking.k8s.io/shared-redis-cluster created
@@ -32,13 +53,15 @@ service/shared-redis-headless created
 statefulset.apps/shared-redis created
 ```
 
-Check all redis pods are running with the command
+### Verify Pods
+
+Check that all Redis pods are running:
 
 ```console
 oc get pods -l "app.kubernetes.io/component=redis"
 ```
 
-You should see output similar to the following:
+Expected output:
 
 ```console
 NAME             READY   STATUS    RESTARTS   AGE
@@ -50,39 +73,35 @@ shared-redis-4   1/1     Running   0          2m30s
 shared-redis-5   1/1     Running   0          112s
 ```
 
-If you are re-deploying or updating the cluster, you will want to keep the same password and username.
+## Create the Cluster
 
-### Create a Cluster
+> **Note:** This only needs to be done once after the initial deployment.
 
-This only needs to be done one time following the initial deployment of the redis cluster. Adjust the name your cluster by replacing `shared` appropriately.
+### Node Configuration
 
-The number of nodes and the distribution of master and replica nodes in a Redis cluster depend on various factors such as the desired level of availability, redundancy, and performance requirements. Here are some guidelines to help you decide:
+A Redis cluster requires at least 6 nodes for high availability with automatic failover:
 
-**Basic Configuration:\***
-Minimum Nodes: A Redis cluster requires at least 6 nodes to ensure high availability with automatic failover.
-3 Master Nodes: Each master node will handle a subset of the data (hash slots).
-3 Replica Nodes: Each master node will have one replica for redundancy.
-Considerations for Node Configuration:
-High Availability: Ensure that each master has at least one replica. This setup provides redundancy and allows for automatic failover if a master node fails.
-Data Distribution: Redis clusters distribute data across master nodes using hash slots. More master nodes mean more granular data distribution.
-Read Scalability: If read operations are high, having multiple replicas can help distribute the read load.
-Fault Tolerance: More replicas increase fault tolerance. If you have a higher tolerance for failures, you can configure more replicas per master.
+- **3 Master Nodes** - Each handles a subset of hash slots
+- **3 Replica Nodes** - Each master has one replica for redundancy
 
-Basic High Availability:
+The `--cluster-replicas 1` parameter specifies one replica per master node.
 
-6 Nodes Total: 3 Masters and 3 Replicas.
-Each master has one replica.
-
-The paremeter `--cluster-replicas 1` is the number of replicas for each master node. Adjust the name your cluster by replacing `shared` appropriatly.
+### Initialize the Cluster
 
 ```console
-oc exec -n $NAMESPACE -it shared-redis-0 -- redis-cli --user $REDIS_USER -a $REDIS_PASSWD --cluster create --cluster-replicas 1 $(oc get pods -n $NAMESPACE -l "app.kubernetes.io/component=redis" -o jsonpath='{range.items[*]}{.status.podIP}:6379 {end}')
+oc exec -n $NAMESPACE -it shared-redis-0 -- redis-cli \
+  --user $REDIS_USER \
+  -a $REDIS_PASSWD \
+  --cluster create \
+  --cluster-replicas 1 \
+  $(oc get pods -n $NAMESPACE -l "app.kubernetes.io/component=redis" -o jsonpath='{range.items[*]}{.status.podIP}:6379 {end}')
 ```
 
-You should see the following output:
+When prompted, type `yes` to accept the configuration.
+
+You should see output similar to:
 
 ```console
-Warning: Using a password with '-a' or '-u' option on the command line interface may not be safe.
 >>> Performing hash slots allocation on 6 nodes...
 Master[0] -> Slots 0 - 5460
 Master[1] -> Slots 5461 - 10922
@@ -112,37 +131,42 @@ Waiting for the cluster to join
 M: 5b24aca2206372f42a372f1c55a6957cd8591f34 10.97.179.175:6379
    slots:[0-5460] (5461 slots) master
    1 additional replica(s)
-S: 338d7065d323fb2b27bb59d8f77b4764cbf0d92b 10.97.170.247:6379
-   slots: (0 slots) slave
-   replicates f7aed2b23c011533806280692870eacbca23391d
 M: 53894e46058104489254719a819d8e1c871aa8ea 10.97.144.215:6379
    slots:[10923-16383] (5461 slots) master
    1 additional replica(s)
-S: 9c63539ae8a31fc03860caea0c6bc4a370221ad7 10.97.176.209:6379
-   slots: (0 slots) slave
-   replicates 53894e46058104489254719a819d8e1c871aa8ea
-S: 787338c9558f666c32ac45f84af5e23cec26fb0b 10.97.108.183:6379
-   slots: (0 slots) slave
-   replicates 5b24aca2206372f42a372f1c55a6957cd8591f34
 M: f7aed2b23c011533806280692870eacbca23391d 10.97.181.42:6379
    slots:[5461-10922] (5462 slots) master
    1 additional replica(s)
+S: 338d7065d323fb2b27bb59d8f77b4764cbf0d92b 10.97.170.247:6379
+   slots: (0 slots) slave
+S: 9c63539ae8a31fc03860caea0c6bc4a370221ad7 10.97.176.209:6379
+   slots: (0 slots) slave
+S: 787338c9558f666c32ac45f84af5e23cec26fb0b 10.97.108.183:6379
+   slots: (0 slots) slave
 [OK] All nodes agree about slots configuration.
 >>> Check for open slots...
 >>> Check slots coverage...
+[OK] All 16384 slots covered.
 ```
 
-### Status
+**What to look for:**
 
-Check the status of the current cluster. This will show the number of nodes and the number of replicas. The parameter `-i` is any node in the cluster. Adjust the name your cluster by replacing `shared` appropriatly.
+- 3 master nodes (`M:`) each with a range of hash slots
+- 3 slave/replica nodes (`S:`) each replicating a master
+- `[OK] All nodes agree about slots configuration`
+- `[OK] All 16384 slots covered`
 
-Check you have the expected number of nodes as described in values.yaml `replicas`.
+## Verify Cluster Status
+
+### Check Cluster Nodes
 
 ```console
-oc exec -n $(oc project --short) -i shared-redis-0 -- redis-cli --user $REDIS_USER -c CLUSTER NODES
+oc exec -n $NAMESPACE -it shared-redis-0 -- redis-cli \
+  --user $REDIS_USER \
+  -c CLUSTER NODES
 ```
 
-You should see output similar to the following:
+Expected output shows 3 masters and 3 slaves with their slot assignments:
 
 ```console
 338d7065d323fb2b27bb59d8f77b4764cbf0d92b 10.97.170.247:6379@16379 slave f7aed2b23c011533806280692870eacbca23391d 0 1716930293077 2 connected
@@ -153,13 +177,15 @@ You should see output similar to the following:
 f7aed2b23c011533806280692870eacbca23391d 10.97.181.42:6379@16379 master - 0 1716930292000 2 connected 5461-10922
 ```
 
-Confirm the cluster is healthy.
+### Check Cluster Health
 
 ```console
-oc exec -n $(oc project --short) -i shared-redis-0 -- redis-cli --user $(oc get secret -n $(oc project --short) shared-redis-creds -o jsonpath='{.data.username}' | base64 -d) -c CLUSTER INFO
+oc exec -n $NAMESPACE -it shared-redis-0 -- redis-cli \
+  --user $REDIS_USER \
+  -c CLUSTER INFO
 ```
 
-You should see output similar to the following:
+Expected output for a healthy cluster:
 
 ```console
 cluster_state:ok
@@ -169,14 +195,13 @@ cluster_slots_pfail:0
 cluster_slots_fail:0
 cluster_known_nodes:6
 cluster_size:3
-cluster_current_epoch:6
-cluster_my_epoch:1
-cluster_stats_messages_ping_sent:109
-cluster_stats_messages_pong_sent:107
-cluster_stats_messages_sent:216
-cluster_stats_messages_ping_received:102
-cluster_stats_messages_pong_received:109
-cluster_stats_messages_meet_received:5
-cluster_stats_messages_received:216
-total_cluster_links_buffer_limit_exceeded:0
 ```
+
+**Key indicators of a healthy cluster:**
+
+- `cluster_state:ok` - The cluster is operating normally
+- `cluster_slots_assigned:16384` - All hash slots are assigned
+- `cluster_slots_ok:16384` - All hash slots are reachable
+- `cluster_slots_pfail:0` and `cluster_slots_fail:0` - No failing slots
+- `cluster_known_nodes:6` - All 6 nodes are visible
+- `cluster_size:3` - 3 master nodes handling data
